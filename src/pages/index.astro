@@ -1,9 +1,25 @@
 ---
-import { getCollection } from "astro:content";
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
 
-const posts = (await getCollection("posts"))
-  .filter(p => !p.data.draft)
-  .sort((a,b)=> new Date(b.data.date)-new Date(a.data.date));
+const postsDir = path.resolve("src/content/posts");
+
+const files = fs.readdirSync(postsDir);
+
+const posts = files
+  .filter(file => file.endsWith(".html"))
+  .map(file => {
+    const raw = fs.readFileSync(path.join(postsDir, file), "utf-8");
+    const { data } = matter(raw);
+
+    return {
+      slug: file.replace(".html", ""),
+      ...data
+    };
+  })
+  .filter(post => !post.draft)
+  .sort((a,b)=> new Date(b.date)-new Date(a.date));
 ---
 
 <html>
@@ -13,10 +29,10 @@ const posts = (await getCollection("posts"))
     <ul>
       {posts.map(post => (
         <li>
-          <a href={`/posts/${post.slug}/`}>
-            {post.data.title}
+          <a href={`/${post.slug}/`}>
+            {post.title}
           </a>
-          — {post.data.date}
+          - {post.date}
         </li>
       ))}
     </ul>
