@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import BaseLayout from "../layouts/BaseLayout.astro";
 
 const postsDir = path.resolve("src/content/posts");
 
@@ -22,8 +23,7 @@ const posts = files
   .sort((a,b)=> new Date(b.date)-new Date(a.date));
 ---
 
-<html>
-  <body>
+<BaseLayout>
     <h1>My Blog</h1>
 
     <ul>
@@ -37,5 +37,4 @@ const posts = files
       ))}
     </ul>
 
-  </body>
-</html>
+</BaseLayout>
