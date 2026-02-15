@@ -4,27 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Netlify Identity (REQUIRED) -->
+  <!-- Netlify Identity FIRST -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-  <!-- Decap CMS -->
-  <script src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", user => {
+        if (!user) {
+          console.log("Identity ready");
+        }
+      });
+    }
+  </script>
+
+  <!-- Load CMS AFTER identity -->
+  <script defer src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
 </head>
-
-<body>
-
-<script>
-  // Fix modern browser tracking protection
-  if (window.netlifyIdentity) {
-    window.netlifyIdentity.on("init", user => {
-      if (!user) {
-        window.netlifyIdentity.on("login", () => {
-          document.location.href = "/admin/";
-        });
-      }
-    });
-  }
-</script>
-
-</body>
+<body></body>
 </html>
