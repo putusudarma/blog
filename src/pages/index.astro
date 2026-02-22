@@ -2,7 +2,6 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import BaseLayout from "../layouts/BaseLayout.astro";
 
 const postsDir = path.resolve("src/content/posts");
 
@@ -11,30 +10,189 @@ const files = fs.readdirSync(postsDir);
 const posts = files
   .filter(file => file.endsWith(".html"))
   .map(file => {
+    const match = file.match(/^(\d{4}-\d{2}-\d{2})\.(.+)\.html$/);
+    if (!match) return null;
+
+    const dateFromFilename = new Date(match[1]);
+    const slug = match[2];
+
     const raw = fs.readFileSync(path.join(postsDir, file), "utf-8");
     const { data } = matter(raw);
 
     return {
-      slug: file.replace(".html", ""),
-      ...data
+      slug,
+      title: data.title,
+      date: dateFromFilename,
+      formattedDate: dateFromFilename.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }),
+      excerpt: data.excerpt
     };
   })
   .filter(post => !post.draft)
-  .sort((a,b)=> new Date(b.date)-new Date(a.date));
+  .sort((a,b)=> b.date - a.date);
 ---
 
-<BaseLayout>
-    <h1>My Blog</h1>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>.Putusudarma - My Train of Thought</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style is:global>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <ul>
+    :root {
+      --bg: #faf9f7;
+      --text: #1a1a1a;
+      --secondary-text: #2a2a2a;
+      --muted: #6b6b6b;
+      --accent: #1a8917;
+      --border: #e8e8e8;
+      --max-width: 680px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 72px 24px 40px;
+    }
+
+    .blog-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    .blog-description {
+      font-size: 1.05rem;
+      color: var(--secondary-text);
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 520px;
+    }
+
+    hr.divider {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Post List ── */
+    main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .post-list {
+      list-style: none;
+    }
+
+    .post-item {
+      padding: 40px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .post-item:last-child {
+      border-bottom: none;
+    }
+
+    .post-item:hover .post-title {
+      color: var(--accent);
+    }
+
+    .post-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 8px;
+      transition: color 0.15s ease;
+    }
+
+    .post-title a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .post-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      font-family: 'Source Serif 4', serif;
+      font-weight: 400;
+    }
+
+    .post-excerpt {
+      font-size: 0.97rem;
+      color: var(--secondary-text);
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 0.8rem;
+      color: #aaa;
+      font-family: 'Source Serif 4', serif;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="blog-title">.Putusudarma</h1>
+    <p class="blog-description">Just a healthy, normal man. Web developer. Guitar player. Parkour enthusiast. Altruist. I enjoy learning new things, building stuff, and thinking creatively. This is my personal train of thought.</p>
+    <p class="blog-description">Find my music on <a href="https://www.instagram.com/putusudarmamusic">Instagram</a></p>
+  </header>
+
+  <hr class="divider" />
+
+  <main>
+    <ul class="post-list">
       {posts.map(post => (
-        <li>
-          <a href={`/${post.slug}/`}>
-            {post.title}
-          </a>
-          - {post.date}
+        <li class="post-item">
+          <h2 class="post-title"><a href={`/${post.slug}/`}>{post.title}</a></h2>
+          <p class="post-meta">{post.formattedDate}</p>
+          <p class="post-excerpt">{post.excerpt}</p>
         </li>
       ))}
     </ul>
+  </main>
 
-</BaseLayout>
+  <footer>
+    .Putusudarma
+  </footer>
+
+</body>
+</html>

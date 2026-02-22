@@ -9,36 +9,361 @@ export async function getStaticPaths() {
 
   return files
     .filter(file => file.endsWith(".html"))
-    .map(file => ({
-      params: { slug: file.replace(".html", "") }
-    }));
+    .map(file => {
+      const match = file.match(/^(\d{4}-\d{2}-\d{2})\.(.+)\.html$/);
+      if (!match) return null;
+
+      return {
+        params: { slug: match[2] }
+      };
+    })
+    .filter(Boolean);
 }
 
-const postsDir = path.resolve("src/content/posts");
-
 const { slug } = Astro.params;
-const filePath = path.join(postsDir, `${slug}.html`);
+const postsDir = path.resolve("src/content/posts");
+const file = fs.readdirSync(postsDir)
+  .find(f => f.endsWith(`.${slug}.html`));
+
+if (!file) {
+  throw new Error("Post not found");
+}
+
+const filePath = path.join(postsDir, file);
 
 if (!fs.existsSync(filePath)) {
   throw new Error("Post not found");
 }
 
+const match = file.match(/^(\d{4}-\d{2}-\d{2})\.(.+)\.html$/);
+const dateObj = new Date(match[1]);
+
+const formattedDate = dateObj.toLocaleDateString("id-ID", {
+  day: "numeric",
+  month: "long",
+  year: "numeric"
+});
+
 const raw = fs.readFileSync(filePath, "utf-8");
 const { data, content } = matter(raw);
+const featuredImage = data.featuredImage || null;
+const featuredAlt = data.featuredAlt || data.title;
 ---
 
-<html>
-  <head>
-    <title>{data.title}</title>
-  </head>
-  <body>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>.Putusudarma - My Train of Thought</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style is:global>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <article>
-      <h1>{data.title}</h1>
-      <small>{data.date}</small>
+    :root {
+      --bg: #faf9f7;
+      --text: #1a1a1a;
+      --secondary-text: #2a2a2a;
+      --muted: #6b6b6b;
+      --accent: #1a8917;
+      --border: #e8e8e8;
+      --max-width: 680px;
+    }
 
-      <div set:html={content}></div>
-    </article>
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 20px;
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  </body>
+    /* ── Header / Site Nav ── */
+    header {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 40px 24px 28px;
+    }
+
+    .blog-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .blog-title a {
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .blog-title a:hover {
+      color: var(--accent);
+    }
+
+    .blog-description {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 300;
+      margin-top: 4px;
+    }
+
+    hr.divider {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Article ── */
+    article {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+
+    .post-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.6rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .post-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+      font-weight: 400;
+    }
+
+    /* ── Featured Image ── */
+    .featured-image {
+      width: 100%;
+      margin-bottom: 44px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .featured-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .featured-image figcaption {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 10px;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ── Post Content ── */
+    .post-content p {
+      margin-bottom: 1.6em;
+      font-weight: 300;
+      color: var(--secondary-text);
+    }
+
+    .post-content h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      margin: 2em 0 0.6em;
+      color: var(--text);
+    }
+
+    .post-content h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 1.8em 0 0.5em;
+      color: var(--text);
+    }
+
+    .post-content a {
+      color: var(--text);
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+      text-underline-offset: 3px;
+    }
+
+    .post-content a:hover {
+      color: var(--accent);
+    }
+
+    .post-content blockquote {
+      border-left: 3px solid var(--text);
+      padding: 4px 0 4px 28px;
+      margin: 2em 0;
+      font-size: 1.15em;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .post-content ul,
+    .post-content ol {
+      padding-left: 1.6em;
+      margin-bottom: 1.6em;
+    }
+
+    .post-content li {
+      margin-bottom: 0.4em;
+      font-weight: 300;
+    }
+
+    .post-content img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 2em 0;
+      border-radius: 3px;
+    }
+
+    .post-content figure {
+      margin: 2em 0;
+    }
+
+    .post-content figure img {
+      margin: 0;
+    }
+
+    .post-content figcaption {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .post-content {
+      overflow: hidden;
+    }
+
+    .image-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 2em 0;
+    }
+
+    .image-row figure {
+      margin: 0;
+    }
+
+    .image-row figure img {
+      width: 100%;
+      max-width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 3px;
+    }
+
+    .image-row figure figcaption {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .image-row-title {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+      letter-spacing: 0.01em;
+      margin-bottom: 0 !important;
+    }
+
+    .post-content hr {
+      border: none;
+      text-align: center;
+      margin: 2.5em 0;
+      color: var(--muted);
+      font-size: 1.4rem;
+      letter-spacing: 0.3em;
+    }
+
+    .post-content hr::before {
+      content: '· · ·';
+    }
+
+    /* ── Back Link ── */
+    .back-link {
+      display: inline-block;
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      width: 100%;
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 0.8rem;
+      color: #aaa;
+      font-family: 'Source Serif 4', serif;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="blog-title"><a href={`${import.meta.env.BASE_URL}`}>.Putusudarma</a></div>
+    <p class="blog-description">Just a healthy, normal man. Web developer. Guitar player. Parkour enthusiast. Altruist. I enjoy learning new things, building stuff, and thinking creatively. This is my personal train of thought.</p>
+    <p class="blog-description">Find my music on <a href="https://www.instagram.com/putusudarmamusic">Instagram</a></p>
+  </header>
+
+  <hr class="divider" />
+
+  <article>
+
+    <h1 class="post-title">{data.title}</h1>
+    <p class="post-meta">{formattedDate}</p>
+
+    {featuredImage && (
+    <figure class="featured-image">
+      <img src={featuredImage} alt={featuredAlt} />
+      <figcaption>{featuredAlt}</figcaption>
+    </figure>
+    )}
+
+    <div class="post-content" set:html={content}></div>
+
+    <a class="back-link" href={`${import.meta.env.BASE_URL}`}>← Back to all posts</a>
+
+  </article>
+
+  <footer>
+    .Putusudarma
+  </footer>
+
+</body>
 </html>
